@@ -417,11 +417,6 @@ function VideoMeetComponent() {
   };
 
   let handleAudio = () => {
-    if (window.localStream) {
-      window.localStream.getAudioTracks().forEach((track) => {
-        track.enabled = !track.enabled;
-      });
-    }
     setAudio(!audio);
   };
   let handleScreen = () => {
