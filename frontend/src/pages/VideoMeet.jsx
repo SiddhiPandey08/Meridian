@@ -12,8 +12,9 @@ import ChatIcon from "@mui/icons-material/Chat";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import PeopleIcon from "@mui/icons-material/People";
+import server from "../environment";
 
-const server_url = "http://localhost:5000"; // Replace with your server URL
+const server_url = server;
 var connections = {};
 const peerConfigConnection = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
