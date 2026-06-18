@@ -12,7 +12,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import PeopleIcon from "@mui/icons-material/People";
-import server from "../environment";
+import server from "../envoirnment";
 
 const server_url = server;
 var connections = {};
