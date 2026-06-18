@@ -397,10 +397,7 @@ function VideoMeetComponent() {
   // ─── Utility: silence + black stream generators ───────────────────────────
   let silence = () => {
     let ctx = new AudioContext();
-    let oscillator = ctx.createOscillator();
-    let dst = oscillator.connect(ctx.createMediaStreamDestination());
-    oscillator.start();
-    ctx.resume();
+    let dst = ctx.createMediaStreamDestination();
     return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
   };
 
@@ -416,12 +413,6 @@ function VideoMeetComponent() {
 
   // ─── Controls ─────────────────────────────────────────────────────────────
   let handleVideo = () => {
-    // toggle the track enabled state directly — no renegotiation needed
-    if (window.localStream) {
-      window.localStream.getVideoTracks().forEach((track) => {
-        track.enabled = !track.enabled;
-      });
-    }
     setVideo(!video);
   };
 
