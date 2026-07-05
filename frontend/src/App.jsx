@@ -8,7 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import Authentication from "./pages/authentication";
 import { AuthProvider } from "./contexts/AuthContext";
 import VideoMeetComponent from "./pages/VideoMeet.jsx";
-import HomePage from "./pages/homePage";
+import HomePage from "./pages/HomePage.jsx";
 import History from "./pages/history";
 import Profile from "./pages/profile";
 
