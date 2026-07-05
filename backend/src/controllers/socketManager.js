@@ -8,10 +8,7 @@ let mediaStatus = {}; // socketId -> { audio, video }
 const connectToSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: [
-        "https://your-frontend-domain.vercel.app",
-        "http://localhost:5173",
-      ],
+      origin: ["https://meridian-vst3.vercel.app", "http://localhost:5173"],
       methods: ["GET", "POST"],
       allowedHeaders: ["*"],
       credentials: true,

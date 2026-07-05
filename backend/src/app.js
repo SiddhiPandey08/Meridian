@@ -15,10 +15,7 @@ const io = connectToSocket(server);
 app.set("port", process.env.PORT || 5000);
 app.use(
   cors({
-    origin: [
-      "https://your-frontend-domain.vercel.app",
-      "http://localhost:5173",
-    ],
+    origin: ["https://meridian-vst3.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   }),
