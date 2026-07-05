@@ -19,7 +19,7 @@ function SpinningMark({ size = 360 }) {
       duration: 18,
       repeat: -1,
       ease: "linear",
-      svgOrigin: "200 200",
+      svgOrigin: "150 150",
     });
 
     return () => tween.kill();
