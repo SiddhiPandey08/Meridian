@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { TextField, Button, IconButton, Badge } from "@mui/material";
@@ -17,6 +17,7 @@ import { useToast } from "../contexts/ToastContext";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import InitialsAvatar from "../components/InitialsAvatar";
 
 const server_url = server;
@@ -24,6 +25,49 @@ var connections = {};
 const peerConfigConnection = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query);
+    const handleChange = (event) => setMatches(event.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [query]);
+
+  return matches;
+}
+
+function LocalVideo({
+  stream,
+  className,
+  registerRef,
+  muted = true,
+  autoPlay = true,
+  playsInline = true,
+}) {
+  const videoElementRef = useRef(null);
+
+  useEffect(() => {
+    if (videoElementRef.current) {
+      videoElementRef.current.srcObject = stream || null;
+      registerRef?.(videoElementRef.current);
+    }
+  }, [stream, registerRef]);
+
+  return (
+    <video
+      ref={videoElementRef}
+      autoPlay={autoPlay}
+      muted={muted}
+      playsInline={playsInline}
+      className={className}
+    ></video>
+  );
+}
 
 function VideoMeetComponent() {
   // ─── Refs ────────────────────────────────────────────────────────────────
@@ -43,7 +87,8 @@ function VideoMeetComponent() {
   let [video, setVideo] = useState([]);
   let [audio, setAudio] = useState();
   let [screen, setScreen] = useState();
-  let [screenAvailable, setScreenAvailable] = useState();
+  const canShareScreen = !!navigator.mediaDevices?.getDisplayMedia;
+  let [screenAvailable, setScreenAvailable] = useState(canShareScreen);
   let [messages, setMessages] = useState([]);
   let [message, setMessage] = useState("");
   let [newMessages, setNewMessages] = useState(0);
@@ -58,6 +103,12 @@ function VideoMeetComponent() {
   // socketId -> { username, audio, video }
   let [participantInfo, setParticipantInfo] = useState({});
   let [viewMode, setViewMode] = useState("spotlight"); // "spotlight" | "grid"
+  let [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 600px)");
+  const isGridView = isMobile || viewMode === "grid";
+  const registerLocalVideoRef = useCallback((node) => {
+    if (node) localVideoref.current = node;
+  }, []);
 
   // ─── STEP 1: On mount — ask for camera/mic permissions ───────────────────
   const { showToast } = useToast();
@@ -86,11 +137,7 @@ function VideoMeetComponent() {
         setAudioAvailable(false);
       }
 
-      if (navigator.mediaDevices.getDisplayMedia) {
-        setScreenAvailable(true);
-      } else {
-        setScreenAvailable(false);
-      }
+      setScreenAvailable(canShareScreen);
 
       if (videoAvailable || audioAvailable) {
         const userMediaStream = await navigator.mediaDevices.getUserMedia({
@@ -524,12 +571,11 @@ function VideoMeetComponent() {
               Enter your name to join the call
             </p>
             <div className={styles.lobbyPreview}>
-              <video
-                ref={localVideoref}
-                autoPlay
-                muted
+              <LocalVideo
+                stream={window.localStream}
                 className={styles.lobbyVideo}
-              ></video>
+                registerRef={registerLocalVideoRef}
+              />
               <div className={styles.lobbyVideoLabel}>Preview</div>
             </div>
             <TextField
@@ -595,7 +641,11 @@ function VideoMeetComponent() {
         <div className={styles.meetVideoContainer}>
           {/* LEFT: Chat panel — slides in, takes space */}
           {chatOpen && (
+            <div className={styles.chatBackdrop} onClick={toggleChat}></div>
+          )}
+          {chatOpen && (
             <div className={styles.chatPanel}>
+              <div className={styles.chatDragHandle}></div>
               <div className={styles.sidePanelHeader}>
                 <span>Chat</span>
                 <button className={styles.panelClose} onClick={toggleChat}>
@@ -648,27 +698,34 @@ function VideoMeetComponent() {
             </div>
           )}
 
-          {viewMode === "grid" ? (
+          {isGridView ? (
             /* CENTER+RIGHT replaced: Grid view */
             <div className={styles.gridArea}>
               <div className={styles.gridContainer}>
-                <div className={styles.gridTile}>
-                  {!video ? (
-                    <div className={styles.avatarFallback}>
-                      <InitialsAvatar name={username} size={56} />
-                    </div>
-                  ) : (
-                    <video ref={localVideoref} autoPlay muted></video>
-                  )}
-                  <div className={styles.gridLabel}>
-                    {username || "You"}
-                    {!audio && (
-                      <MicOffIcon
-                        sx={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}
+                {!isMobile && (
+                  <div className={styles.gridTile}>
+                    {!video ? (
+                      <div className={styles.avatarFallback}>
+                        <InitialsAvatar name={username} size={56} />
+                      </div>
+                    ) : (
+                      <LocalVideo
+                        stream={window.localStream}
+                        registerRef={registerLocalVideoRef}
                       />
                     )}
+                    <div
+                      className={`${styles.gridLabel} ${styles.participantLabel}`}
+                    >
+                      {username || "You"}
+                      {!audio && (
+                        <MicOffIcon
+                          sx={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {videos.map((v) => (
                   <div className={styles.gridTile} key={v.socketId}>
@@ -688,7 +745,9 @@ function VideoMeetComponent() {
                         }}
                       ></video>
                     )}
-                    <div className={styles.gridLabel}>
+                    <div
+                      className={`${styles.gridLabel} ${styles.participantLabel}`}
+                    >
                       {participantInfo[v.socketId]?.username ||
                         v.socketId.slice(0, 8)}
                       {participantInfo[v.socketId]?.audio === false && (
@@ -700,6 +759,24 @@ function VideoMeetComponent() {
                   </div>
                 ))}
               </div>
+              {isMobile && (
+                <div className={styles.pipWrapper}>
+                  {!video ? (
+                    <div className={styles.avatarFallback}>
+                      <InitialsAvatar name={username} size={40} />
+                    </div>
+                  ) : (
+                    <LocalVideo
+                      stream={window.localStream}
+                      className={styles.pipVideo}
+                      registerRef={registerLocalVideoRef}
+                    />
+                  )}
+                  <div className={`${styles.pipLabel} ${styles.participantLabel}`}>
+                    {username || "You"}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -743,7 +820,9 @@ function VideoMeetComponent() {
                         }}
                       ></video>
                     )}
-                    <div className={styles.spotlightLabel}>
+                    <div
+                      className={`${styles.spotlightLabel} ${styles.participantLabel}`}
+                    >
                       {participantInfo[spotlightVideo.socketId]?.username ||
                         spotlightVideo.socketId.slice(0, 8)}
                       {participantInfo[spotlightVideo.socketId]?.audio ===
@@ -774,9 +853,14 @@ function VideoMeetComponent() {
                         <InitialsAvatar name={username} />
                       </div>
                     ) : (
-                      <video ref={localVideoref} autoPlay muted></video>
+                      <LocalVideo
+                        stream={window.localStream}
+                        registerRef={registerLocalVideoRef}
+                      />
                     )}
-                    <div className={styles.spotlightLabel}>
+                    <div
+                      className={`${styles.spotlightLabel} ${styles.participantLabel}`}
+                    >
                       {username || "You"}
                     </div>
                   </div>
@@ -784,13 +868,14 @@ function VideoMeetComponent() {
 
                 {spotlightVideo && (
                   <div className={styles.pipWrapper}>
-                    <video
-                      ref={localVideoref}
-                      autoPlay
-                      muted
+                    <LocalVideo
+                      stream={window.localStream}
                       className={styles.pipVideo}
-                    ></video>
-                    <div className={styles.pipLabel}>{username || "You"}</div>
+                      registerRef={registerLocalVideoRef}
+                    />
+                    <div className={`${styles.pipLabel} ${styles.participantLabel}`}>
+                      {username || "You"}
+                    </div>
                   </div>
                 )}
               </div>
@@ -823,7 +908,11 @@ function VideoMeetComponent() {
                         }}
                       ></video>
                     )}
-                    <div className={styles.stripLabel}>{username || "You"}</div>
+                    <div
+                      className={`${styles.stripLabel} ${styles.participantLabel}`}
+                    >
+                      {username || "You"}
+                    </div>
                   </div>
 
                   {videos.map((v) => (
@@ -848,7 +937,9 @@ function VideoMeetComponent() {
                           }}
                         ></video>
                       )}
-                      <div className={styles.stripLabel}>
+                      <div
+                        className={`${styles.stripLabel} ${styles.participantLabel}`}
+                      >
                         {participantInfo[v.socketId]?.username ||
                           v.socketId.slice(0, 8)}
                         {participantInfo[v.socketId]?.audio === false && (
@@ -870,77 +961,169 @@ function VideoMeetComponent() {
           {/* BOTTOM: Control bar */}
           <div className={styles.buttonContainers}>
             <div className={styles.controlBar}>
-              <div className={styles.controlBtn}>
-                <IconButton
-                  onClick={handleVideo}
-                  className={`${styles.iconBtn} ${!video ? styles.iconBtnOff : ""}`}
-                >
-                  {video ? <VideocamIcon /> : <VideocamOffIcon />}
-                </IconButton>
-                <span>{video ? "Camera" : "Off"}</span>
-              </div>
+              {isMobile ? (
+                <>
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      aria-label={
+                        video ? "Turn camera off" : "Turn camera on"
+                      }
+                      onClick={handleVideo}
+                      className={`${styles.iconBtn} ${!video ? styles.iconBtnOff : ""}`}
+                    >
+                      {video ? <VideocamIcon /> : <VideocamOffIcon />}
+                    </IconButton>
+                  </div>
 
-              <div className={styles.controlBtn}>
-                <IconButton
-                  onClick={handleAudio}
-                  className={`${styles.iconBtn} ${!audio ? styles.iconBtnOff : ""}`}
-                >
-                  {audio ? <MicIcon /> : <MicOffIcon />}
-                </IconButton>
-                <span>{audio ? "Mic" : "Muted"}</span>
-              </div>
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      aria-label={
+                        audio ? "Mute microphone" : "Unmute microphone"
+                      }
+                      onClick={handleAudio}
+                      className={`${styles.iconBtn} ${!audio ? styles.iconBtnOff : ""}`}
+                    >
+                      {audio ? <MicIcon /> : <MicOffIcon />}
+                    </IconButton>
+                  </div>
 
-              <div className={styles.controlBtn}>
-                <IconButton
-                  onClick={() =>
-                    setViewMode((v) =>
-                      v === "spotlight" ? "grid" : "spotlight",
-                    )
-                  }
-                  className={`${styles.iconBtn} ${viewMode === "grid" ? styles.iconBtnActive : ""}`}
-                >
-                  {viewMode === "spotlight" ? (
-                    <GridViewIcon />
-                  ) : (
-                    <ViewSidebarIcon />
+                  <div className={styles.controlBtn}>
+                    <Badge badgeContent={newMessages || null} color="warning">
+                      <IconButton
+                        aria-label={chatOpen ? "Close chat" : "Open chat"}
+                        onClick={toggleChat}
+                        className={`${styles.iconBtn} ${chatOpen ? styles.iconBtnActive : ""}`}
+                      >
+                        <ChatIcon />
+                      </IconButton>
+                    </Badge>
+                  </div>
+
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      aria-label="More options"
+                      onClick={() => setMoreMenuOpen((prev) => !prev)}
+                      className={`${styles.iconBtn} ${moreMenuOpen ? styles.iconBtnActive : ""}`}
+                    >
+                      <MoreHorizIcon />
+                    </IconButton>
+                    {moreMenuOpen && (
+                      <div className={styles.moreMenu}>
+                        <button
+                          type="button"
+                          className={styles.moreMenuItem}
+                          onClick={() => {
+                            setViewMode((v) =>
+                              v === "spotlight" ? "grid" : "spotlight",
+                            );
+                            setMoreMenuOpen(false);
+                          }}
+                        >
+                          {viewMode === "spotlight"
+                            ? "Switch to grid view"
+                            : "Switch to spotlight view"}
+                        </button>
+                        {canShareScreen && (
+                          <button
+                            type="button"
+                            className={styles.moreMenuItem}
+                            onClick={() => {
+                              handleScreen();
+                              setMoreMenuOpen(false);
+                            }}
+                          >
+                            {screen ? "Stop sharing screen" : "Share screen"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      aria-label="Leave call"
+                      onClick={handleEndCall}
+                      className={styles.iconBtnEnd}
+                    >
+                      <CallEndIcon />
+                    </IconButton>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      onClick={handleVideo}
+                      className={`${styles.iconBtn} ${!video ? styles.iconBtnOff : ""}`}
+                    >
+                      {video ? <VideocamIcon /> : <VideocamOffIcon />}
+                    </IconButton>
+                    <span>{video ? "Camera" : "Off"}</span>
+                  </div>
+
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      onClick={handleAudio}
+                      className={`${styles.iconBtn} ${!audio ? styles.iconBtnOff : ""}`}
+                    >
+                      {audio ? <MicIcon /> : <MicOffIcon />}
+                    </IconButton>
+                    <span>{audio ? "Mic" : "Muted"}</span>
+                  </div>
+
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      onClick={() =>
+                        setViewMode((v) =>
+                          v === "spotlight" ? "grid" : "spotlight",
+                        )
+                      }
+                      className={`${styles.iconBtn} ${viewMode === "grid" ? styles.iconBtnActive : ""}`}
+                    >
+                      {viewMode === "spotlight" ? (
+                        <GridViewIcon />
+                      ) : (
+                        <ViewSidebarIcon />
+                      )}
+                    </IconButton>
+                    <span>{viewMode === "spotlight" ? "Grid" : "Spotlight"}</span>
+                  </div>
+
+                  {screenAvailable && (
+                    <div className={styles.controlBtn}>
+                      <IconButton
+                        onClick={handleScreen}
+                        className={`${styles.iconBtn} ${screen ? styles.iconBtnActive : ""}`}
+                      >
+                        {screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+                      </IconButton>
+                      <span>{screen ? "Stop" : "Share"}</span>
+                    </div>
                   )}
-                </IconButton>
-                <span>{viewMode === "spotlight" ? "Grid" : "Spotlight"}</span>
-              </div>
 
-              {screenAvailable && (
-                <div className={styles.controlBtn}>
-                  <IconButton
-                    onClick={handleScreen}
-                    className={`${styles.iconBtn} ${screen ? styles.iconBtnActive : ""}`}
-                  >
-                    {screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-                  </IconButton>
-                  <span>{screen ? "Stop" : "Share"}</span>
-                </div>
+                  <div className={styles.controlBtn}>
+                    <IconButton
+                      onClick={handleEndCall}
+                      className={styles.iconBtnEnd}
+                    >
+                      <CallEndIcon />
+                    </IconButton>
+                    <span>Leave</span>
+                  </div>
+
+                  <div className={styles.controlBtn}>
+                    <Badge badgeContent={newMessages || null} color="warning">
+                      <IconButton
+                        onClick={toggleChat}
+                        className={`${styles.iconBtn} ${chatOpen ? styles.iconBtnActive : ""}`}
+                      >
+                        <ChatIcon />
+                      </IconButton>
+                    </Badge>
+                    <span>Chat</span>
+                  </div>
+                </>
               )}
-
-              <div className={styles.controlBtn}>
-                <IconButton
-                  onClick={handleEndCall}
-                  className={styles.iconBtnEnd}
-                >
-                  <CallEndIcon />
-                </IconButton>
-                <span>Leave</span>
-              </div>
-
-              <div className={styles.controlBtn}>
-                <Badge badgeContent={newMessages || null} color="warning">
-                  <IconButton
-                    onClick={toggleChat}
-                    className={`${styles.iconBtn} ${chatOpen ? styles.iconBtnActive : ""}`}
-                  >
-                    <ChatIcon />
-                  </IconButton>
-                </Badge>
-                <span>Chat</span>
-              </div>
             </div>
           </div>
         </div>
