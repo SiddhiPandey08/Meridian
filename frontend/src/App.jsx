@@ -1,7 +1,3 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "./assets/vite.svg";
-import heroImg from "./assets/hero.png";
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
@@ -11,14 +7,14 @@ import VideoMeetComponent from "./pages/VideoMeet.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import History from "./pages/history";
 import Profile from "./pages/profile";
-
+import { CustomCursor } from "./pages/CustomCursor.jsx";
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
       <Router>
         <AuthProvider>
+          <CustomCursor />
+
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<Authentication />} />
