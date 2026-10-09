@@ -34,7 +34,6 @@ function useMediaQuery(query) {
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);
     const handleChange = (event) => setMatches(event.matches);
-    setMatches(mediaQuery.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [query]);
@@ -552,10 +551,6 @@ function VideoMeetComponent() {
   // ─── Spotlight helpers ────────────────────────────────────────────────────
   const spotlightVideo = videos.find((v) => v.socketId === spotlightId);
   const stripVideos = videos.filter((v) => v.socketId !== spotlightId);
-
-  useEffect(() => {
-    if (!isMobile) setMoreMenuOpen(false);
-  }, [isMobile]);
 
   // ─── JSX ──────────────────────────────────────────────────────────────────
   return (
