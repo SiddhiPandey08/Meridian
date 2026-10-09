@@ -1,10 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 
 export function CustomCursor() {
   const cursorRef = useRef(null);
-  const trailRefs = useRef([]);
-  // const trailCount = 5; // Number of dots in the trail
 
   useEffect(() => {
     if (
@@ -15,7 +13,6 @@ export function CustomCursor() {
     }
 
     const cursor = cursorRef.current;
-    // const trails = trailRefs.current;
 
     // Quick setters for the main arrow (zero lag)
     const xTo = gsap.quickTo(cursor, "x", {
@@ -28,7 +25,6 @@ export function CustomCursor() {
     });
 
     let prevX = 0;
-    let prevY = 0;
 
     const handleMouseMove = (e) => {
       const { clientX, clientY } = e;
@@ -51,7 +47,6 @@ export function CustomCursor() {
       // });
 
       prevX = clientX;
-      prevY = clientY;
     };
 
     window.addEventListener("mousemove", handleMouseMove);

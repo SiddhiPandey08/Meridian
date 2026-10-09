@@ -769,67 +769,7 @@
   color: var(--ink-soft);
 }
 /* =========================================================
-   1. Custom Dual-Ring GSAP Cursor
-   ========================================================= */
-@media (pointer: fine) {
-  body {
-    cursor: default; /* Fallback */
-  }
-
-  .customCursorDot {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 8px;
-    height: 8px;
-    background-color: var(--rust);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    will-change: transform;
-  }
-
-  .customCursorRing {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 32px;
-    height: 32px;
-    border: 1.5px solid var(--rust);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9998;
-    opacity: 0.6;
-    transform: translate(-50%, -50%);
-    will-change: transform;
-    transition:
-      width 0.2s ease,
-      height 0.2s ease,
-      border-color 0.2s ease;
-  }
-
-  /* Expand cursor ring on interactive elements */
-  a:hover ~ .customCursorRing,
-  button:hover ~ .customCursorRing,
-  div[role="button"]:hover ~ .customCursorRing {
-    width: 48px;
-    height: 48px;
-    border-color: var(--mustard);
-    opacity: 0.9;
-  }
-}
-
-/* Hide custom cursor on mobile or touch devices */
-@media (pointer: coarse) {
-  .customCursorDot,
-  .customCursorRing {
-    display: none !important;
-  }
-}
-
-/* =========================================================
-   2. Guest Join Modal Styles
+   Guest Join Modal Styles
    ========================================================= */
 .navTextBtn {
   background: transparent;
@@ -1113,7 +1053,7 @@ body.modalOpen {
   }
 }
 /* --- 1. Custom SVG Arrow Cursor Rules --- */
-@media (pointer: fine) {
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
   *,
   *::before,
   *::after {
@@ -1277,38 +1217,6 @@ body.modalOpen {
     ),
     rgba(244, 239, 230, 0.6);
   transition: border-color 0.2s ease;
-}
-@media (pointer: fine) {
-  *,
-  *::before,
-  *::after {
-    cursor: none !important; /* Hide native cursor */
-  }
-
-  .customSvgCursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 24px;
-    height: 24px;
-    pointer-events: none;
-    z-index: 99999;
-    will-change: transform;
-    transform-origin: top left;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
-  }
-
-  .cursorTrailDot {
-    position: fixed;
-    top: 6px; /* Offset to center the dot slightly behind the arrow tip */
-    left: 6px;
-    background-color: var(--mustard);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99998;
-    will-change: transform;
-    transform: translate(-50%, -50%);
-  }
 }
 .testimonialsGrid {
   display: grid;

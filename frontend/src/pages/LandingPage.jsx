@@ -7,75 +7,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 /* =========================================================
-   1. Custom GSAP Cursor Component
-   ========================================================= */
-function CustomCursor() {
-  const dotRef = useRef(null);
-  const ringRef = useRef(null);
-
-  useEffect(() => {
-    // Respect user motion preferences or touch-only devices
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      window.matchMedia("(pointer: coarse)").matches
-    ) {
-      return;
-    }
-
-    const dot = dotRef.current;
-    const ring = ringRef.current;
-
-    const xDotTo = gsap.quickTo(dot, "x", {
-      duration: 0.1,
-      ease: "power3.out",
-    });
-    const yDotTo = gsap.quickTo(dot, "y", {
-      duration: 0.1,
-      ease: "power3.out",
-    });
-    const xRingTo = gsap.quickTo(ring, "x", {
-      duration: 0.35,
-      ease: "power2.out",
-    });
-    const yRingTo = gsap.quickTo(ring, "y", {
-      duration: 0.35,
-      ease: "power2.out",
-    });
-
-    const handleMouseMove = (e) => {
-      xDotTo(e.clientX);
-      yDotTo(e.clientY);
-      xRingTo(e.clientX);
-      yRingTo(e.clientY);
-    };
-
-    const handleMouseDown = () => {
-      gsap.to([dot, ring], { scale: 0.7, duration: 0.15 });
-    };
-
-    const handleMouseUp = () => {
-      gsap.to([dot, ring], { scale: 1, duration: 0.2 });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
-
-  return (
-    <>
-      <div ref={dotRef} className="customCursorDot" aria-hidden="true" />
-      <div ref={ringRef} className="customCursorRing" aria-hidden="true" />
-    </>
-  );
-}
-/* =========================================================
    Testimonials Section
    ========================================================= */
 function TestimonialsSection() {
@@ -491,8 +422,6 @@ function LandingPage() {
 
   return (
     <div className="landingPageContainer">
-      <CustomCursor />
-
       <nav>
         <div className="navHeader">
           <img src="/meridianLogo.png" alt="Meridian" className="logo" />
